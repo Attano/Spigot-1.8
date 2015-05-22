@@ -29,6 +29,7 @@ import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.inventory.CraftMetaBook;
 import org.bukkit.craftbukkit.util.CraftDamageSource;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.entity.Arrow;
@@ -416,7 +417,7 @@ public class CraftEventFactory {
             EntityDamageEvent event;
             if (damager == null) {
                 event = new EntityDamageByBlockEvent(null, entity.getBukkitEntity(), DamageCause.BLOCK_EXPLOSION, modifiers, modifierFunctions);
-            } else if (entity instanceof EntityEnderDragon && ((EntityEnderDragon) entity).bx == damager) {
+            } else if (entity instanceof EntityEnderDragon && ((EntityEnderDragon) entity).bA == damager) {
                 event = new EntityDamageEvent(entity.getBukkitEntity(), DamageCause.ENTITY_EXPLOSION, modifiers, modifierFunctions);
             } else {
                 if (damager instanceof org.bukkit.entity.TNTPrimed) {
@@ -697,6 +698,10 @@ public class CraftEventFactory {
     }
 
     public static Container callInventoryOpenEvent(EntityPlayer player, Container container) {
+        return callInventoryOpenEvent(player, container, false);
+    }
+
+    public static Container callInventoryOpenEvent(EntityPlayer player, Container container, boolean cancelled) {
         if (player.activeContainer != player.defaultContainer) { // fire INVENTORY_CLOSE if one already open
             player.playerConnection.a(new PacketPlayInCloseWindow(player.activeContainer.windowId));
         }
@@ -706,6 +711,7 @@ public class CraftEventFactory {
         player.activeContainer.transferTo(container, craftPlayer);
 
         InventoryOpenEvent event = new InventoryOpenEvent(container.getBukkitView());
+        event.setCancelled(cancelled);
         server.getPluginManager().callEvent(event);
 
         if (event.isCancelled()) {
@@ -828,7 +834,6 @@ public class CraftEventFactory {
     }
 
     public static void handleInventoryCloseEvent(EntityHuman human) {
-        if (human.activeContainer == human.defaultContainer) return; // Spigot
         InventoryCloseEvent event = new InventoryCloseEvent(human.activeContainer.getBukkitView());
         human.world.getServer().getPluginManager().callEvent(event);
         human.activeContainer.transferTo(human.defaultContainer, human.getBukkitEntity());
@@ -844,16 +849,47 @@ public class CraftEventFactory {
         // If they've got the same item in their hand, it'll need to be updated.
         if (itemInHand != null && itemInHand.getItem() == Items.WRITABLE_BOOK) {
             if (!editBookEvent.isCancelled()) {
-                CraftItemStack.setItemMeta(itemInHand, editBookEvent.getNewBookMeta());
                 if (editBookEvent.isSigning()) {
                     itemInHand.setItem(Items.WRITTEN_BOOK);
                 }
+                CraftMetaBook meta = (CraftMetaBook) editBookEvent.getNewBookMeta();
+                List<IChatBaseComponent> pages = meta.pages;
+                for (int i = 0; i < pages.size(); i++) {
+                    pages.set(i, stripEvents(pages.get(i)));
+                }
+                CraftItemStack.setItemMeta(itemInHand, meta);
             }
 
             // Client will have updated its idea of the book item; we need to overwrite that
             Slot slot = player.activeContainer.getSlot(player.inventory, itemInHandIndex);
             player.playerConnection.sendPacket(new PacketPlayOutSetSlot(player.activeContainer.windowId, slot.rawSlotIndex, itemInHand));
         }
+    }
+
+    private static IChatBaseComponent stripEvents(IChatBaseComponent c) {
+        ChatModifier modi = c.getChatModifier();
+        if (modi != null) {
+            modi.setChatClickable(null);
+            modi.setChatHoverable(null);
+        }
+        c.setChatModifier(modi);
+        if (c instanceof ChatMessage) {
+            ChatMessage cm = (ChatMessage) c;
+            Object[] oo = cm.j();
+            for (int i = 0; i < oo.length; i++) {
+                Object o = oo[i];
+                if (o instanceof IChatBaseComponent) {
+                    oo[i] = stripEvents((IChatBaseComponent) o);
+                }
+            }
+        }
+        List<IChatBaseComponent> ls = c.a();
+        if (ls != null) {
+            for (int i = 0; i < ls.size(); i++) {
+                ls.set(i, stripEvents(ls.get(i)));
+            }
+        }
+        return c;
     }
 
     public static PlayerUnleashEntityEvent callPlayerUnleashEntityEvent(EntityInsentient entity, EntityHuman player) {

@@ -39,9 +39,10 @@ public class Potion {
     }
 
     /**
+     * @param type the type of the potion
+     * @param tier the tier of the potion
      * @deprecated In favour of {@link #Potion(PotionType, int)}
-     */
-    @SuppressWarnings("javadoc")
+     */    
     @Deprecated
     public Potion(PotionType type, Tier tier) {
         this(type, tier == Tier.TWO ? 2 : 1);
@@ -49,19 +50,24 @@ public class Potion {
     }
 
     /**
+     * @param type the type of the potion
+     * @param tier the tier of the potion
+     * @param splash whether the potion is a splash potion
      * @deprecated In favour of {@link #Potion(PotionType, int, boolean)}
      */
-    @SuppressWarnings("javadoc")
     @Deprecated
     public Potion(PotionType type, Tier tier, boolean splash) {
         this(type, tier == Tier.TWO ? 2 : 1, splash);
     }
 
     /**
+     * @param type the type of the potion
+     * @param tier the tier of the potion
+     * @param splash whether the potion is a splash potion
+     * @param extended whether the potion has an extended duration
      * @deprecated In favour of {@link #Potion(PotionType, int, boolean,
      *     boolean)}
      */
-    @SuppressWarnings("javadoc")
     @Deprecated
     public Potion(PotionType type, Tier tier, boolean splash, boolean extended) {
         this(type, tier, splash);
@@ -381,13 +387,15 @@ public class Potion {
 
     /**
      *
+     * @param damage the damage value
+     * @return the produced potion
      * @deprecated Magic value
      */
     @Deprecated
     public static Potion fromDamage(int damage) {
         PotionType type = PotionType.getByDamageValue(damage & POTION_BIT);
         Potion potion;
-        if (type == null || (type == PotionType.WATER && damage != 0)) {
+        if (type == null || type == PotionType.WATER) {
             potion = new Potion(damage & NAME_BIT);
         } else {
             int level = (damage & TIER_BIT) >> TIER_SHIFT;
@@ -433,6 +441,7 @@ public class Potion {
 
     /**
      *
+     * @return the name id
      * @deprecated Magic value
      */
     @Deprecated

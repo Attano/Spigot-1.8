@@ -1,5 +1,7 @@
 package org.bukkit.entity;
 
+import org.bukkit.Material;
+import org.bukkit.material.MaterialData;
 import org.bukkit.util.Vector;
 
 /**
@@ -11,6 +13,8 @@ public interface Minecart extends Vehicle {
      * This method exists for legacy reasons to provide backwards
      * compatibility. It will not exist at runtime and should not be used
      * under any circumstances.
+     *
+     * @param damage over 40 to "kill" a minecart
      */
     @Deprecated
     public void _INVALID_setDamage(int damage);
@@ -26,6 +30,8 @@ public interface Minecart extends Vehicle {
      * This method exists for legacy reasons to provide backwards
      * compatibility. It will not exist at runtime and should not be used
      * under any circumstances.
+     *
+     * @return The damage
      */
     @Deprecated
     public int _INVALID_getDamage();
@@ -105,4 +111,34 @@ public interface Minecart extends Vehicle {
      * @param derailed visible speed
      */
     public void setDerailedVelocityMod(Vector derailed);
+
+    /**
+     * Sets the display block for this minecart.
+     * Passing a null value will set the minecart to have no display block.
+     *
+     * @param material the material to set as display block.
+     */
+    public void setDisplayBlock(MaterialData material);
+
+    /**
+     * Gets the display block for this minecart.
+     * This function will return the type AIR if none is set.
+     *
+     * @return the block displayed by this minecart.
+     */
+    public MaterialData getDisplayBlock();
+
+    /**
+     * Sets the offset of the display block.
+     *
+     * @param offset the block offset to set for this minecart.
+     */
+    public void setDisplayBlockOffset(int offset);
+
+    /**
+     * Gets the offset of the display block.
+     * 
+     * @return the current block offset for this minecart.
+     */
+    public int getDisplayBlockOffset();
 }

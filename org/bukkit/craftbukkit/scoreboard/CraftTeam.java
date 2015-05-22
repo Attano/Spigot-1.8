@@ -2,9 +2,11 @@ package org.bukkit.craftbukkit.scoreboard;
 
 import java.util.Set;
 
+import net.minecraft.server.ScoreboardTeamBase.EnumNameTagVisibility;
 import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.scoreboard.NameTagVisibility;
 import org.bukkit.scoreboard.Team;
 
 import com.google.common.collect.ImmutableSet;
@@ -17,7 +19,6 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
     CraftTeam(CraftScoreboard scoreboard, ScoreboardTeam team) {
         super(scoreboard);
         this.team = team;
-        scoreboard.teams.put(team.getName(), this);
     }
 
     public String getName() throws IllegalStateException {
@@ -90,6 +91,18 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
         CraftScoreboard scoreboard = checkState();
 
         team.setCanSeeFriendlyInvisibles(enabled);
+    }
+
+    public NameTagVisibility getNameTagVisibility() throws IllegalArgumentException {
+        CraftScoreboard scoreboard = checkState();
+
+        return notchToBukkit(team.getNameTagVisibility());
+    }
+
+    public void setNameTagVisibility(NameTagVisibility visibility) throws IllegalArgumentException {
+        CraftScoreboard scoreboard = checkState();
+
+        team.setNameTagVisibility(bukkitToNotch(visibility)); 
     }
 
     public Set<OfflinePlayer> getPlayers() throws IllegalStateException {
@@ -174,7 +187,65 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
         CraftScoreboard scoreboard = checkState();
 
         scoreboard.board.removeTeam(team);
-        scoreboard.teams.remove(team.getName());
-        setUnregistered();
     }
+
+    public static EnumNameTagVisibility bukkitToNotch(NameTagVisibility visibility) {
+        switch (visibility) {
+            case ALWAYS:
+                return EnumNameTagVisibility.ALWAYS;
+            case NEVER:
+                return EnumNameTagVisibility.NEVER;
+            case HIDE_FOR_OTHER_TEAMS:
+                return EnumNameTagVisibility.HIDE_FOR_OTHER_TEAMS;
+            case HIDE_FOR_OWN_TEAM:
+                return EnumNameTagVisibility.HIDE_FOR_OWN_TEAM;
+            default:
+                throw new IllegalArgumentException("Unknown visibility level " + visibility);
+        }
+    }
+
+    public static NameTagVisibility notchToBukkit(EnumNameTagVisibility visibility) {
+        switch (visibility) {
+            case ALWAYS:
+                return NameTagVisibility.ALWAYS;
+            case NEVER:
+                return NameTagVisibility.NEVER;
+            case HIDE_FOR_OTHER_TEAMS:
+                return NameTagVisibility.HIDE_FOR_OTHER_TEAMS;
+            case HIDE_FOR_OWN_TEAM:
+                return NameTagVisibility.HIDE_FOR_OWN_TEAM;
+            default:
+                throw new IllegalArgumentException("Unknown visibility level " + visibility);
+        }
+    }
+
+    @Override
+    CraftScoreboard checkState() throws IllegalStateException {
+        if (getScoreboard().board.getTeam(team.getName()) == null) {
+            throw new IllegalStateException("Unregistered scoreboard component");
+        }
+
+        return getScoreboard();
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 43 * hash + (this.team != null ? this.team.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final CraftTeam other = (CraftTeam) obj;
+        return !(this.team != other.team && (this.team == null || !this.team.equals(other.team)));
+    }
+    // Spigot end
+
 }

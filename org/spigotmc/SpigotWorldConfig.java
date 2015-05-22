@@ -166,35 +166,11 @@ public class SpigotWorldConfig
         log( "Entity Tracking Range: Pl " + playerTrackingRange + " / An " + animalTrackingRange + " / Mo " + monsterTrackingRange + " / Mi " + miscTrackingRange + " / Other " + otherTrackingRange );
     }
 
-    public boolean altHopperTicking;
     public int hopperTransfer;
     public int hopperCheck;
     public int hopperAmount;
     private void hoppers()
     {
-        // Alternate ticking method. Uses inventory changes, redstone updates etc.
-        // to update hoppers. Hopper-check is disabled when this is true.
-        boolean prev = altHopperTicking;
-        altHopperTicking = getBoolean( "hopper-alt-ticking", false );
-        // Necessary for the reload command
-        if (prev != altHopperTicking) {
-            net.minecraft.server.World world = (net.minecraft.server.World) Bukkit.getWorld(this.worldName);
-            if (world != null) {
-                if (altHopperTicking) {
-                    for (Object o : world.tileEntityList) {
-                        if (o instanceof net.minecraft.server.TileEntityHopper) {
-                            ((net.minecraft.server.TileEntityHopper) o).convertToScheduling();
-                        }
-                    }
-                } else {
-                    for (Object o : world.tileEntityList) {
-                        if (o instanceof net.minecraft.server.TileEntityHopper) {
-                            ((net.minecraft.server.TileEntityHopper) o).convertToPolling();
-                        }
-                    }
-                }
-            }
-        }
         // Set the tick delay between hopper item movements
         hopperTransfer = getInt( "ticks-per.hopper-transfer", 8 );
         // Set the tick delay between checking for items after the associated
@@ -202,7 +178,6 @@ public class SpigotWorldConfig
         // hopper sorting machines from becoming out of sync.
         hopperCheck = getInt( "ticks-per.hopper-check", hopperTransfer );
         hopperAmount = getInt( "hopper-amount", 1 );
-        log( "Alternative Hopper Ticking: " + altHopperTicking );
         log( "Hopper Transfer: " + hopperTransfer + " Hopper Check: " + hopperCheck + " Hopper Amount: " + hopperAmount );
     }
 
@@ -220,7 +195,7 @@ public class SpigotWorldConfig
         log( "Structure Info Saving: " + saveStructureInfo );
         if ( !saveStructureInfo )
         {
-            log( "*** WARNING *** You have selected to NOT save structure info. This may cause structures such as fortresses to not spawn mobs when updating to 1.7!" );
+            log( "*** WARNING *** You have selected to NOT save structure info. This may cause structures such as fortresses to not spawn mobs!" );
             log( "*** WARNING *** Please use this option with caution, SpigotMC is not responsible for any issues this option may cause in the future!" );
         }
     }
@@ -354,5 +329,14 @@ public class SpigotWorldConfig
     private void hangingTickFrequency()
     {
         hangingTickFrequency = getInt( "hanging-tick-frequency", 100 );
+    }
+
+    public int tileMaxTickTime;
+    public int entityMaxTickTime;
+    private void maxTickTimes()
+    {
+        tileMaxTickTime = getInt("max-tick-time.tile", 50);
+        entityMaxTickTime = getInt("max-tick-time.entity", 50);
+        log("Tile Max Tick Time: " + tileMaxTickTime + "ms Entity max Tick Time: " + entityMaxTickTime + "ms");
     }
 }

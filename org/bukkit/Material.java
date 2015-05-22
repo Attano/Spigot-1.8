@@ -158,8 +158,6 @@ public enum Material {
     CAKE_BLOCK(92, 64, Cake.class),
     DIODE_BLOCK_OFF(93, Diode.class),
     DIODE_BLOCK_ON(94, Diode.class),
-    @Deprecated
-    LOCKED_CHEST(95),
     STAINED_GLASS(95),
     TRAP_DOOR(96, TrapDoor.class),
     MONSTER_EGGS(97, MonsterEggs.class),
@@ -248,11 +246,11 @@ public enum Material {
     RED_SANDSTONE_STAIRS(180, Stairs.class),
     DOUBLE_STONE_SLAB2(181),
     STONE_SLAB2(182),
-    SPRUCE_FENCE_GATE(183),
-    BIRCH_FENCE_GATE(184),
-    JUNGLE_FENCE_GATE(185),
-    DARK_OAK_FENCE_GATE(186),
-    ACACIA_FENCE_GATE(187),
+    SPRUCE_FENCE_GATE(183, Gate.class),
+    BIRCH_FENCE_GATE(184, Gate.class),
+    JUNGLE_FENCE_GATE(185, Gate.class),
+    DARK_OAK_FENCE_GATE(186, Gate.class),
+    ACACIA_FENCE_GATE(187, Gate.class),
     SPRUCE_FENCE(188),
     BIRCH_FENCE(189),
     JUNGLE_FENCE(190),
@@ -768,7 +766,6 @@ public enum Material {
             case GLOWSTONE:
             case JACK_O_LANTERN:
             case CAKE_BLOCK:
-            case LOCKED_CHEST:
             case STAINED_GLASS:
             case TRAP_DOOR:
             case MONSTER_EGGS:
@@ -845,6 +842,14 @@ public enum Material {
             case JUNGLE_FENCE:
             case DARK_OAK_FENCE:
             case ACACIA_FENCE:
+            case STANDING_BANNER:
+            case WALL_BANNER:
+            case DAYLIGHT_DETECTOR_INVERTED:
+            case SPRUCE_DOOR:
+            case BIRCH_DOOR:
+            case JUNGLE_DOOR:
+            case ACACIA_DOOR:
+            case DARK_OAK_DOOR:
                 return true;
             default:
                 return false;
@@ -905,7 +910,6 @@ public enum Material {
             case ACTIVATOR_RAIL:
             case CARPET:
             case DOUBLE_PLANT:
-            case DAYLIGHT_DETECTOR_INVERTED:
                 return true;
             default:
                 return false;
@@ -969,6 +973,14 @@ public enum Material {
             case JUNGLE_FENCE:
             case DARK_OAK_FENCE:
             case ACACIA_FENCE:
+            case STANDING_BANNER:
+            case WALL_BANNER:
+            case DAYLIGHT_DETECTOR_INVERTED:
+            case SPRUCE_DOOR:
+            case BIRCH_DOOR:
+            case JUNGLE_DOOR:
+            case ACACIA_DOOR:
+            case DARK_OAK_DOOR:
                 return true;
             default:
                 return false;
@@ -1105,6 +1117,7 @@ public enum Material {
             case BARRIER:
             case PRISMARINE:
             case RED_SANDSTONE:
+            case DOUBLE_STONE_SLAB2:
                 return true;
             default:
                 return false;

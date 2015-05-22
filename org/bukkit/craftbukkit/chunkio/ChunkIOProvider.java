@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.chunkio;
 
+import java.io.IOException;
 import net.minecraft.server.Chunk;
 import net.minecraft.server.ChunkRegionLoader;
 import net.minecraft.server.NBTTagCompound;
@@ -9,21 +10,29 @@ import org.bukkit.craftbukkit.util.AsynchronousExecutor;
 import org.bukkit.craftbukkit.util.LongHash;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import net.minecraft.server.Entity;
+import net.minecraft.server.EntitySlice;
 
 class ChunkIOProvider implements AsynchronousExecutor.CallBackProvider<QueuedChunk, Chunk, Runnable, RuntimeException> {
     private final AtomicInteger threadNumber = new AtomicInteger(1);
 
     // async stuff
     public Chunk callStage1(QueuedChunk queuedChunk) throws RuntimeException {
-        ChunkRegionLoader loader = queuedChunk.loader;
-        Object[] data = loader.loadChunk(queuedChunk.world, queuedChunk.x, queuedChunk.z);
+        try {
+            ChunkRegionLoader loader = queuedChunk.loader;
+            Object[] data = loader.loadChunk(queuedChunk.world, queuedChunk.x, queuedChunk.z);
+            
+            if (data != null) {
+                queuedChunk.compound = (NBTTagCompound) data[1];
+                return (Chunk) data[0];
+            }
 
-        if (data != null) {
-            queuedChunk.compound = (NBTTagCompound) data[1];
-            return (Chunk) data[0];
+            return null;
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
         }
-
-        return null;
     }
 
     // sync stuff
@@ -47,7 +56,7 @@ class ChunkIOProvider implements AsynchronousExecutor.CallBackProvider<QueuedChu
 
         Server server = queuedChunk.provider.world.getServer();
         if (server != null) {
-           server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkLoadEvent(chunk.bukkitChunk, false));
+            server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkLoadEvent(chunk.bukkitChunk, false));
         }
 
         // Update neighbor counts

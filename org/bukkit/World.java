@@ -283,7 +283,10 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * @param x X-coordinate of the chunk
      * @param z Z-coordinate of the chunk
      * @return Whether the chunk was actually refreshed
+     * 
+     * @deprecated This method is not guaranteed to work suitably across all client implementations.
      */
+    @Deprecated
     public boolean refreshChunk(int x, int z);
 
     /**
@@ -402,6 +405,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * Get a collection of all entities in this World matching the given
      * class/interface
      *
+     * @param <T> an entity subclass
      * @param classes The classes representing the types of entity to match
      * @return A List of all Entities currently residing in this world that
      *     match the given class/interface
@@ -412,7 +416,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
     /**
      * Get a collection of all entities in this World matching the given
      * class/interface
-     *
+     * 
+     * @param <T> an entity subclass
      * @param cls The class representing the type of entity to match
      * @return A List of all Entities currently residing in this world that
      *     match the given class/interface
@@ -435,6 +440,19 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * @return A list of all Players currently residing in this world
      */
     public List<Player> getPlayers();
+
+    /**
+     * Returns a list of entities within a bounding box centered around a Location.
+     *
+     * Some implementations may impose artificial restrictions on the size of the search bounding box.
+     *
+     * @param location The center of the bounding box
+     * @param x 1/2 the size of the box along x axis
+     * @param y 1/2 the size of the box along y axis
+     * @param z 1/2 the size of the box along z axis
+     * @return the collection of entities near location. This will always be a non-null collection.
+     */
+    public Collection<Entity> getNearbyEntities(Location location, double x, double y, double z);
 
     /**
      * Gets the unique name of this world
@@ -746,6 +764,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * Plays an effect to all players within a default radius around a given
      * location.
      *
+     * @param <T> data dependant on the type of effect
      * @param location the {@link Location} around which players must be to
      *     hear the sound
      * @param effect the {@link Effect}
@@ -756,6 +775,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
     /**
      * Plays an effect to all players within a given radius around a location.
      *
+     * @param <T> data dependant on the type of effect
      * @param location the {@link Location} around which players must be to
      *     hear the effect
      * @param effect the {@link Effect}
@@ -1050,6 +1070,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * <p>
      * <b>Note:</b> If set to a negative number the world will use the
      * server-wide spawn limit instead.
+     * 
+     * @param limit the new mob limit
      */
     void setMonsterSpawnLimit(int limit);
 
@@ -1067,6 +1089,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * <p>
      * <b>Note:</b> If set to a negative number the world will use the
      * server-wide spawn limit instead.
+     * 
+     * @param limit the new mob limit
      */
     void setAnimalSpawnLimit(int limit);
 
@@ -1084,6 +1108,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * <p>
      * <b>Note:</b> If set to a negative number the world will use the
      * server-wide spawn limit instead.
+     * 
+     * @param limit the new mob limit
      */
     void setWaterAnimalSpawnLimit(int limit);
 
@@ -1101,6 +1127,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * <p>
      * <b>Note:</b> If set to a negative number the world will use the
      * server-wide spawn limit instead.
+     * 
+     * @param limit the new mob limit
      */
     void setAmbientSpawnLimit(int limit);
 
@@ -1228,6 +1256,13 @@ public interface World extends PluginMessageRecipient, Metadatable {
 
     Spigot spigot();
     // Spigot end
+
+    /**
+     * Gets the world border for this world.
+     *
+     * @return The world border for this world.
+     */
+    public WorldBorder getWorldBorder();
 
     /**
      * Represents various map environment types that a world may be

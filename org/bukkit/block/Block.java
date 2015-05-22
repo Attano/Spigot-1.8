@@ -148,6 +148,7 @@ public interface Block extends Metadatable {
      * If the provided Location is null this method does nothing and returns
      * null.
      *
+     * @param loc the location to copy into
      * @return The Location object provided or null
      */
     Location getLocation(Location loc);
@@ -186,6 +187,14 @@ public interface Block extends Metadatable {
     void setType(Material type);
 
     /**
+     * Sets the type of this block
+     *
+     * @param type Material to change this block to
+     * @param applyPhysics False to cancel physics on the changed block.
+     */
+    void setType(Material type, boolean applyPhysics);
+
+    /**
      * Sets the type-id of this block
      *
      * @param type Type-Id to change this block to
@@ -219,16 +228,16 @@ public interface Block extends Metadatable {
     boolean setTypeIdAndData(int type, byte data, boolean applyPhysics);
 
     /**
-     * Gets the face relation of this block compared to the given block
+     * Gets the face relation of this block compared to the given block.
      * <p>
-     * For example:
-     * <pre>
+     * For example: 
+     * <pre>{@code
      * Block current = world.getBlockAt(100, 100, 100);
      * Block target = world.getBlockAt(100, 101, 100);
      *
      * current.getFace(target) == BlockFace.Up;
-     * </pre>
-     * <br />
+     * }</pre>
+     * <br>
      * If the given block is not connected to this block, null may be returned
      *
      * @param block Block to compare against this block

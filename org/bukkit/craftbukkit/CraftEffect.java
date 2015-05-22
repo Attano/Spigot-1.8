@@ -57,6 +57,7 @@ public class CraftEffect {
             break;
         case ITEM_BREAK:
             datavalue = ((Material) data).getId();
+            break;
         default:
             datavalue = 0;
         }

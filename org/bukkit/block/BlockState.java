@@ -96,6 +96,7 @@ public interface BlockState extends Metadatable {
      * If the provided Location is null this method does nothing and returns
      * null.
      *
+     * @param loc the location to copy into
      * @return The Location object provided or null
      */
     Location getLocation(Location loc);
@@ -191,4 +192,15 @@ public interface BlockState extends Metadatable {
      */
     @Deprecated
     public void setRawData(byte data);
+
+    /**
+     * Returns whether this state is placed in the world.
+     *
+     * Some methods will not work if the blockState isn't
+     * placed in the world.
+     *
+     * @return whether the state is placed in the world
+     *         or 'virtual' (e.g. on an itemstack)
+     */
+    boolean isPlaced();
 }

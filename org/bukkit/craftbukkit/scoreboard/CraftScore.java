@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.scoreboard;
 import java.util.Map;
 
 import net.minecraft.server.Scoreboard;
+import net.minecraft.server.ScoreboardObjective;
 import net.minecraft.server.ScoreboardScore;
 
 import org.bukkit.Bukkit;
@@ -41,7 +42,7 @@ final class CraftScore implements Score {
         Scoreboard board = objective.checkState().board;
 
         if (board.getPlayers().contains(entry)) { // Lazy
-            Map<net.minecraft.server.ScoreboardObjective, ScoreboardScore> scores = board.getPlayerObjectives(entry); // Spigot
+            Map<ScoreboardObjective, ScoreboardScore> scores = board.getPlayerObjectives(entry);
             ScoreboardScore score = scores.get(objective.getHandle());
             if (score != null) { // Lazy
                 return score.getScore();
@@ -60,7 +61,7 @@ final class CraftScore implements Score {
     }
 
     // Spigot start
-    @Override    
+    @Override
     public boolean isScoreSet() throws IllegalStateException {
         Scoreboard board = objective.checkState().board;
 

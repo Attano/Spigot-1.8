@@ -62,8 +62,9 @@ public final class CraftItemFactory implements ItemFactory {
         case AIR:
             return null;
         case WRITTEN_BOOK:
+            return meta instanceof CraftMetaBookSigned ? meta : new CraftMetaBookSigned(meta);
         case BOOK_AND_QUILL:
-            return meta instanceof CraftMetaBook ? meta : new CraftMetaBook(meta);
+            return meta != null && meta.getClass().equals(CraftMetaBook.class) ? meta : new CraftMetaBook(meta);
         case SKULL_ITEM:
             return meta instanceof CraftMetaSkull ? meta : new CraftMetaSkull(meta);
         case LEATHER_HELMET:
@@ -83,6 +84,26 @@ public final class CraftItemFactory implements ItemFactory {
             return meta instanceof CraftMetaEnchantedBook ? meta : new CraftMetaEnchantedBook(meta);
         case BANNER:
             return meta instanceof CraftMetaBanner ? meta : new CraftMetaBanner(meta);
+        case FURNACE:
+        case CHEST:
+        case TRAPPED_CHEST:
+        case JUKEBOX:
+        case DISPENSER:
+        case DROPPER:
+        case SIGN:
+        case MOB_SPAWNER:
+        case NOTE_BLOCK:
+        case PISTON_BASE:
+        case BREWING_STAND_ITEM:
+        case ENCHANTMENT_TABLE:
+        case COMMAND:
+        case BEACON:
+        case DAYLIGHT_DETECTOR:
+        case DAYLIGHT_DETECTOR_INVERTED:
+        case HOPPER:
+        case REDSTONE_COMPARATOR:
+        case FLOWER_POT_ITEM:
+            return new CraftMetaBlockState(meta, material);
         default:
             return new CraftMetaItem(meta);
         }

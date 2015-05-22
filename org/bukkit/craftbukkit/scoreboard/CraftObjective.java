@@ -17,8 +17,6 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
         super(scoreboard);
         this.objective = objective;
         this.criteria = CraftCriteria.getFromNMS(objective);
-
-        scoreboard.objectives.put(objective.getName(), this);
     }
 
     ScoreboardObjective getHandle() {
@@ -95,7 +93,7 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
 
     public Score getScore(String entry) throws IllegalArgumentException, IllegalStateException {
         Validate.notNull(entry, "Entry cannot be null");
-        if (entry.length() > 16) throw new IllegalArgumentException("Entry cannot be longer than 16 characters!"); // Spigot
+        if (entry.length() > 40) throw new IllegalArgumentException("Entry cannot be longer than 40 characters!"); // Spigot
         CraftScoreboard scoreboard = checkState();
 
         return new CraftScore(this, entry);
@@ -105,8 +103,36 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
     public void unregister() throws IllegalStateException {
         CraftScoreboard scoreboard = checkState();
 
-        scoreboard.objectives.remove(this.getName());
         scoreboard.board.unregisterObjective(objective);
-        setUnregistered();
     }
+
+    @Override
+    CraftScoreboard checkState() throws IllegalStateException {
+        if (getScoreboard().board.getObjective(objective.getName()) == null) {
+            throw new IllegalStateException("Unregistered scoreboard component");
+        }
+        
+        return getScoreboard();
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 31 * hash + (this.objective != null ? this.objective.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final CraftObjective other = (CraftObjective) obj;
+        return !(this.objective != other.objective && (this.objective == null || !this.objective.equals(other.objective)));
+    }
+
+
 }

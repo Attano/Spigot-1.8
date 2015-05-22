@@ -106,7 +106,7 @@ public class ActivationRange
         maxRange = Math.max( maxRange, miscActivationRange );
         maxRange = Math.min( ( world.spigotConfig.viewDistance << 4 ) - 8, maxRange );
 
-        for ( Entity player : (List<Entity>) world.players )
+        for ( Entity player : (List<Entity>) (List) world.players )
         {
 
             player.activatedTick = MinecraftServer.currentTick;
@@ -141,9 +141,9 @@ public class ActivationRange
      */
     private static void activateChunkEntities(Chunk chunk)
     {
-        for ( EntitySlice slice : chunk.entitySlices )
+        for ( List<Entity> slice : chunk.entitySlices )
         {
-            for ( Entity entity : (Set<Entity>) slice )
+            for ( Entity entity : slice )
             {
                 if ( MinecraftServer.currentTick > entity.activatedTick )
                 {
@@ -188,7 +188,7 @@ public class ActivationRange
     public static boolean checkEntityImmunities(Entity entity)
     {
         // quick checks.
-        if ( entity.inWater /* isInWater */ || entity.fireTicks > 0 )
+        if ( entity.inWater || entity.fireTicks > 0 )
         {
             return true;
         }
@@ -215,14 +215,14 @@ public class ActivationRange
             {
                 return true;
             }
-            if ( entity instanceof EntityVillager && ( (EntityVillager) entity ).ck() /* Getter for first boolean */ )
+            if ( entity instanceof EntityVillager && ( (EntityVillager) entity ).cm() /* Getter for first boolean */ )
             {
                 return true;
             }
             if ( entity instanceof EntityAnimal )
             {
                 EntityAnimal animal = (EntityAnimal) entity;
-                if ( animal.isBaby() || animal.ce() /*love*/ )
+                if ( animal.isBaby() || animal.isInLove() )
                 {
                     return true;
                 }
@@ -244,6 +244,12 @@ public class ActivationRange
     public static boolean checkIfActive(Entity entity)
     {
         SpigotTimings.checkIfActiveTimer.startTiming();
+        // Never safe to skip fireworks or entities not yet added to chunk
+        if ( !entity.isAddedToChunk() || entity instanceof EntityFireworks ) {
+            SpigotTimings.checkIfActiveTimer.stopTiming();
+            return true;
+        }
+
         boolean isActive = entity.activatedTick >= MinecraftServer.currentTick || entity.defaultActivationState;
 
         // Should this entity tick?

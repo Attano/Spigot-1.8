@@ -219,6 +219,20 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
                 openCustomInventory(inventory, player, "minecraft:hopper");
             }
             break;
+        case BEACON:
+            if (craftinv.getInventory() instanceof TileEntityBeacon) {
+                getHandle().openTileEntity((TileEntityBeacon) craftinv.getInventory());
+            } else {
+                openCustomInventory(inventory, player, "minecraft:beacon");
+            }
+            break;
+        case ANVIL:
+            if (craftinv.getInventory() instanceof BlockAnvil.TileEntityContainerAnvil) {
+                getHandle().openTileEntity((BlockAnvil.TileEntityContainerAnvil) craftinv.getInventory());
+            } else {
+                openCustomInventory(inventory, player, "minecraft:anvil");
+            }
+            break;
         case CREATIVE:
         case CRAFTING:
             throw new IllegalArgumentException("Can't open a " + type + " inventory!");
@@ -240,6 +254,14 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         String title = container.getBukkitView().getTitle();
         int size = container.getBukkitView().getTopInventory().getSize();
 
+        // Special cases
+        if (windowType.equals("minecraft:crafting_table") 
+                || windowType.equals("minecraft:anvil")
+                || windowType.equals("minecraft:enchanting_table")
+                ) {
+            size = 0;
+        }
+
         player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, new ChatComponentText(title), size));
         getHandle().activeContainer = container;
         getHandle().activeContainer.addSlotListener(player);
@@ -255,7 +277,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         if (location == null) {
             location = getLocation();
         }
-        getHandle().openTileEntity(new TileEntityContainerWorkbench(getHandle().world, new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ())));
+        getHandle().openTileEntity(new BlockWorkbench.TileEntityContainerWorkbench(getHandle().world, new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ())));
         if (force) {
             getHandle().activeContainer.checkReachable = false;
         }
@@ -272,7 +294,14 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         if (location == null) {
             location = getLocation();
         }
-        getHandle().openTileEntity((ITileEntityContainer) getHandle().world.getTileEntity(new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ())));
+
+        // If there isn't an enchant table we can force create one, won't be very useful though.
+        TileEntity container = getHandle().world.getTileEntity(new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ()));
+        if (container == null && force) {
+            container = new TileEntityEnchantTable();
+        }
+        getHandle().openTileEntity((ITileEntityContainer) container);
+
         if (force) {
             getHandle().activeContainer.checkReachable = false;
         }

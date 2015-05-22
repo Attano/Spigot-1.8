@@ -3,8 +3,10 @@ package org.bukkit.craftbukkit;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Iterator;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -22,6 +24,7 @@ import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.TreeType;
 import org.bukkit.World;
+import org.bukkit.WorldBorder;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -56,6 +59,7 @@ public class CraftWorld implements World {
     public static final int CUSTOM_DIMENSION_OFFSET = 10;
 
     private final WorldServer world;
+    private WorldBorder worldBorder;
     private Environment environment;
     private final CraftServer server = (CraftServer) Bukkit.getServer();
     private final ChunkGenerator generator;
@@ -82,7 +86,7 @@ public class CraftWorld implements World {
     }
 
     public Block getBlockAt(int x, int y, int z) {
-        return getChunkAt(x >> 4, z >> 4).getBlock(x & 0xF, y & 0xFF, z & 0xF);
+        return getChunkAt(x >> 4, z >> 4).getBlock(x & 0xF, y, z & 0xF);
     }
 
     public int getBlockTypeIdAt(int x, int y, int z) {
@@ -261,27 +265,29 @@ public class CraftWorld implements World {
         return chunk != null;
     }
 
-    private void chunkLoadPostProcess(net.minecraft.server.Chunk chunk, int x, int z) {
+    private void chunkLoadPostProcess(net.minecraft.server.Chunk chunk, int cx, int cz) {
         if (chunk != null) {
-            world.chunkProviderServer.chunks.put(LongHash.toLong(x, z), chunk);
+            world.chunkProviderServer.chunks.put(LongHash.toLong(cx, cz), chunk);
 
             chunk.addEntities();
 
-            if (!chunk.done && world.chunkProviderServer.isChunkLoaded(x + 1, z + 1) && world.chunkProviderServer.isChunkLoaded(x, z + 1) && world.chunkProviderServer.isChunkLoaded(x + 1, z)) {
-                world.chunkProviderServer.getChunkAt(world.chunkProviderServer, x, z);
-            }
+            // Update neighbor counts
+            for (int x = -2; x < 3; x++) {
+                for (int z = -2; z < 3; z++) {
+                    if (x == 0 && z == 0) {
+                        continue;
+                    }
 
-            if (world.chunkProviderServer.isChunkLoaded(x - 1, z) && !world.chunkProviderServer.getOrCreateChunk(x - 1, z).done && world.chunkProviderServer.isChunkLoaded(x - 1, z + 1) && world.chunkProviderServer.isChunkLoaded(x, z + 1) && world.chunkProviderServer.isChunkLoaded(x - 1, z)) {
-                world.chunkProviderServer.getChunkAt(world.chunkProviderServer, x - 1, z);
+                    net.minecraft.server.Chunk neighbor = world.chunkProviderServer.getChunkIfLoaded(chunk.locX + x, chunk.locZ + z);
+                    if (neighbor != null) {
+                        neighbor.setNeighborLoaded(-x, -z);
+                        chunk.setNeighborLoaded(x, z);
+                    }
+                }
             }
+            // CraftBukkit end
 
-            if (world.chunkProviderServer.isChunkLoaded(x, z - 1) && !world.chunkProviderServer.getOrCreateChunk(x, z - 1).done && world.chunkProviderServer.isChunkLoaded(x + 1, z - 1) && world.chunkProviderServer.isChunkLoaded(x, z - 1) && world.chunkProviderServer.isChunkLoaded(x + 1, z)) {
-                world.chunkProviderServer.getChunkAt(world.chunkProviderServer, x, z - 1);
-            }
-
-            if (world.chunkProviderServer.isChunkLoaded(x - 1, z - 1) && !world.chunkProviderServer.getOrCreateChunk(x - 1, z - 1).done && world.chunkProviderServer.isChunkLoaded(x - 1, z - 1) && world.chunkProviderServer.isChunkLoaded(x, z - 1) && world.chunkProviderServer.isChunkLoaded(x - 1, z)) {
-                world.chunkProviderServer.getChunkAt(world.chunkProviderServer, x - 1, z - 1);
-            }
+            chunk.loadNearby(world.chunkProviderServer, world.chunkProviderServer, cx, cz);
         }
     }
 
@@ -309,14 +315,39 @@ public class CraftWorld implements World {
         return new CraftItem(world.getServer(), entity);
     }
 
+    private static void randomLocationWithinBlock(Location loc, double xs, double ys, double zs) {
+        double prevX = loc.getX();
+        double prevY = loc.getY();
+        double prevZ = loc.getZ();
+        loc.add(xs, ys, zs);
+        if (loc.getX() < Math.floor(prevX)) {
+            loc.setX(Math.floor(prevX));
+        }
+        if (loc.getX() >= Math.ceil(prevX)) {
+            loc.setX(Math.ceil(prevX - 0.01));
+        }
+        if (loc.getY() < Math.floor(prevY)) {
+            loc.setY(Math.floor(prevY));
+        }
+        if (loc.getY() >= Math.ceil(prevY)) {
+            loc.setY(Math.ceil(prevY - 0.01));
+        }
+        if (loc.getZ() < Math.floor(prevZ)) {
+            loc.setZ(Math.floor(prevZ));
+        }
+        if (loc.getZ() >= Math.ceil(prevZ)) {
+            loc.setZ(Math.ceil(prevZ - 0.01));
+        }
+    }
+
     public org.bukkit.entity.Item dropItemNaturally(Location loc, ItemStack item) {
-        double xs = world.random.nextFloat() * 0.7F + (1.0F - 0.7F) * 0.5D;
-        double ys = world.random.nextFloat() * 0.7F + (1.0F - 0.7F) * 0.5D;
-        double zs = world.random.nextFloat() * 0.7F + (1.0F - 0.7F) * 0.5D;
+        double xs = world.random.nextFloat() * 0.7F - 0.35D;
+        double ys = world.random.nextFloat() * 0.7F - 0.35D;
+        double zs = world.random.nextFloat() * 0.7F - 0.35D;
         loc = loc.clone();
-        loc.setX(loc.getX() + xs);
-        loc.setY(loc.getY() + ys);
-        loc.setZ(loc.getZ() + zs);
+        // Makes sure the new item is created within the block the location points to.
+        // This prevents item spill in 1-block wide farms.
+        randomLocationWithinBlock(loc, xs, ys, zs);
         return dropItem(loc, item);
     }
 
@@ -374,22 +405,30 @@ public class CraftWorld implements World {
             gen = new WorldGenTaiga1();
             break;
         case JUNGLE:
-            gen = new WorldGenJungleTree(true, 10, 20, 3, 3); // Magic values as in BlockSapling
+            IBlockData iblockdata1 = Blocks.LOG.getBlockData().set(BlockLog1.VARIANT, BlockWood.EnumLogVariant.JUNGLE);
+            IBlockData iblockdata2 = Blocks.LEAVES.getBlockData().set(BlockLeaves1.VARIANT, BlockWood.EnumLogVariant.JUNGLE).set(BlockLeaves.CHECK_DECAY, Boolean.valueOf(false));
+            gen = new WorldGenJungleTree(true, 10, 20, iblockdata1, iblockdata2); // Magic values as in BlockSapling
             break;
         case SMALL_JUNGLE:
-            gen = new WorldGenTrees(true, 4 + rand.nextInt(7), 3, 3, false);
+            iblockdata1 = Blocks.LOG.getBlockData().set(BlockLog1.VARIANT, BlockWood.EnumLogVariant.JUNGLE);
+            iblockdata2 = Blocks.LEAVES.getBlockData().set(BlockLeaves1.VARIANT, BlockWood.EnumLogVariant.JUNGLE).set(BlockLeaves.CHECK_DECAY, Boolean.valueOf(false));
+            gen = new WorldGenTrees(true, 4 + rand.nextInt(7), iblockdata1, iblockdata2, false);
             break;
         case COCOA_TREE:
-            gen = new WorldGenTrees(true, 4 + rand.nextInt(7), 3, 3, true);
+            iblockdata1 = Blocks.LOG.getBlockData().set(BlockLog1.VARIANT, BlockWood.EnumLogVariant.JUNGLE);
+            iblockdata2 = Blocks.LEAVES.getBlockData().set(BlockLeaves1.VARIANT, BlockWood.EnumLogVariant.JUNGLE).set(BlockLeaves.CHECK_DECAY, Boolean.valueOf(false));
+            gen = new WorldGenTrees(true, 4 + rand.nextInt(7), iblockdata1, iblockdata2, true);
             break;
         case JUNGLE_BUSH:
-            gen = new WorldGenGroundBush(3, 0);
+            iblockdata1 = Blocks.LOG.getBlockData().set(BlockLog1.VARIANT, BlockWood.EnumLogVariant.JUNGLE);
+            iblockdata2 = Blocks.LEAVES.getBlockData().set(BlockLeaves1.VARIANT, BlockWood.EnumLogVariant.OAK).set(BlockLeaves.CHECK_DECAY, Boolean.valueOf(false));
+            gen = new WorldGenGroundBush(iblockdata1, iblockdata2);
             break;
         case RED_MUSHROOM:
-            gen = new WorldGenHugeMushroom(1);
+            gen = new WorldGenHugeMushroom(Blocks.RED_MUSHROOM_BLOCK);
             break;
         case BROWN_MUSHROOM:
-            gen = new WorldGenHugeMushroom(0);
+            gen = new WorldGenHugeMushroom(Blocks.BROWN_MUSHROOM_BLOCK);
             break;
         case SWAMP:
             gen = new WorldGenSwampTree();
@@ -670,6 +709,21 @@ public class CraftWorld implements World {
         return list;
     }
 
+    @Override
+    public Collection<Entity> getNearbyEntities(Location location, double x, double y, double z) {
+        if (location == null || !location.getWorld().equals(this)) {
+            return Collections.emptyList();
+        }
+
+        AxisAlignedBB bb = new AxisAlignedBB(location.getX() - x, location.getY() - y, location.getZ() - z, location.getX() + x, location.getY() + y, location.getZ() + z);
+        List<net.minecraft.server.Entity> entityList = getHandle().getEntities(null, bb);
+        List<Entity> bukkitEntityList = new ArrayList<org.bukkit.entity.Entity>(entityList.size());
+        for (Object entity : entityList) {
+            bukkitEntityList.add(((net.minecraft.server.Entity) entity).getBukkitEntity());
+        }
+        return bukkitEntityList;
+    }
+
     public List<Player> getPlayers() {
         List<Player> list = new ArrayList<Player>();
 
@@ -688,12 +742,17 @@ public class CraftWorld implements World {
     }
 
     public void save() {
+    // Spigot start
+        save(true);
+    }
+    public void save(boolean forceSave) {
+    // Spigot end
         this.server.checkSaveState();
         try {
             boolean oldSave = world.savingDisabled;
 
             world.savingDisabled = false;
-            world.save(true, null);
+            world.save(forceSave, null); // Spigot
 
             world.savingDisabled = oldSave;
         } catch (ExceptionWorldConflict ex) {
@@ -726,20 +785,7 @@ public class CraftWorld implements World {
     }
 
     public void setStorm(boolean hasStorm) {
-        CraftServer server = world.getServer();
-
-        WeatherChangeEvent weather = new WeatherChangeEvent(this, hasStorm);
-        server.getPluginManager().callEvent(weather);
-        if (!weather.isCancelled()) {
-            world.worldData.setStorm(hasStorm);
-
-            // These numbers are from Minecraft
-            if (hasStorm) {
-                setWeatherDuration(rand.nextInt(12000) + 12000);
-            } else {
-                setWeatherDuration(rand.nextInt(168000) + 12000);
-            }
-        }
+        world.worldData.setStorm(hasStorm);
     }
 
     public int getWeatherDuration() {
@@ -751,25 +797,11 @@ public class CraftWorld implements World {
     }
 
     public boolean isThundering() {
-        return hasStorm() && world.worldData.isThundering();
+        return world.worldData.isThundering();
     }
 
     public void setThundering(boolean thundering) {
-        if (thundering && !hasStorm()) setStorm(true);
-        CraftServer server = world.getServer();
-
-        ThunderChangeEvent thunder = new ThunderChangeEvent(this, thundering);
-        server.getPluginManager().callEvent(thunder);
-        if (!thunder.isCancelled()) {
-            world.worldData.setThundering(thundering);
-
-            // These numbers are from Minecraft
-            if (thundering) {
-                setThunderDuration(rand.nextInt(12000) + 3600);
-            } else {
-                setThunderDuration(rand.nextInt(168000) + 12000);
-            }
-        }
+        world.worldData.setThundering(thundering);
     }
 
     public int getThunderDuration() {
@@ -1013,32 +1045,42 @@ public class CraftWorld implements World {
         } else if (Hanging.class.isAssignableFrom(clazz)) {
             Block block = getBlockAt(location);
             BlockFace face = BlockFace.SELF;
-            if (block.getRelative(BlockFace.EAST).getTypeId() == 0) {
-                face = BlockFace.EAST;
-            } else if (block.getRelative(BlockFace.NORTH).getTypeId() == 0) {
-                face = BlockFace.NORTH;
-            } else if (block.getRelative(BlockFace.WEST).getTypeId() == 0) {
-                face = BlockFace.WEST;
-            } else if (block.getRelative(BlockFace.SOUTH).getTypeId() == 0) {
-                face = BlockFace.SOUTH;
-            }
-            EnumDirection dir;
-            switch (face) {
-            case SOUTH:
-            default:
-                dir = EnumDirection.SOUTH;
-                break;
-            case WEST:
-                dir = EnumDirection.WEST;
-                break;
-            case NORTH:
-                dir = EnumDirection.NORTH;
-                break;
-            case EAST:
-                dir = EnumDirection.EAST;
-                break;
+
+            int width = 16; // 1 full block, also painting smallest size.
+            int height = 16; // 1 full block, also painting smallest size.
+
+            if (ItemFrame.class.isAssignableFrom(clazz)) {
+                width = 12;
+                height = 12;
+            } else if (LeashHitch.class.isAssignableFrom(clazz)) {
+                width = 9;
+                height = 9;
             }
 
+            BlockFace[] faces = new BlockFace[]{BlockFace.EAST,BlockFace.NORTH,BlockFace.WEST,BlockFace.SOUTH};
+            final BlockPosition pos = new BlockPosition((int) x, (int) y, (int) z);
+            for (BlockFace dir : faces) {
+                net.minecraft.server.Block nmsBlock = CraftMagicNumbers.getBlock(block.getRelative(dir));
+                if (nmsBlock.getMaterial().isBuildable() || BlockDiodeAbstract.d(nmsBlock)) {
+                    boolean taken = false;
+                    AxisAlignedBB bb = EntityHanging.calculateBoundingBox(pos,CraftBlock.blockFaceToNotch(dir).opposite(),width,height);
+                    List<net.minecraft.server.Entity> list = (List<net.minecraft.server.Entity>) world.getEntities(null, bb);
+                    for (Iterator<net.minecraft.server.Entity> it = list.iterator(); !taken && it.hasNext();) {
+                        net.minecraft.server.Entity e = it.next();
+                        if (e instanceof EntityHanging) {
+                            taken = true; // Hanging entities do not like hanging entities which intersect them.
+                        }
+                    }
+
+                    if (!taken) {
+                        face = dir;
+                        break;
+                    }
+                }
+            }
+
+            EnumDirection dir = CraftBlock.blockFaceToNotch(face).opposite();
+            
             if (Painting.class.isAssignableFrom(clazz)) {
                 entity = new EntityPainting(world, new BlockPosition((int) x, (int) y, (int) z), dir);
             } else if (ItemFrame.class.isAssignableFrom(clazz)) {
@@ -1297,6 +1339,15 @@ public class CraftWorld implements World {
         return getHandle().getGameRules().contains(rule);
     }
 
+    @Override
+    public WorldBorder getWorldBorder() {
+        if (this.worldBorder == null) {
+            this.worldBorder = new CraftWorldBorder(this);
+        }
+
+        return this.worldBorder;
+    }
+
     public void processChunkGC() {
         chunkGCTickCount++;
 
@@ -1354,7 +1405,7 @@ public class CraftWorld implements World {
                                 extra = new int[]{ id };
                             } else 
                             {
-                                extra = new int[]{ (id << 4) | data };                                
+                                extra = new int[]{ (data << 12) | (id & 0xFFF) };
                             }
                         }
                         break;

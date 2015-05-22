@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.block;
 import net.minecraft.server.ChatComponentText;
 import net.minecraft.server.IChatBaseComponent;
 import net.minecraft.server.TileEntitySign;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -23,6 +24,13 @@ public class CraftSign extends CraftBlockState implements Sign {
             return;
         }
         // Spigot end
+        lines = new String[sign.lines.length];
+        System.arraycopy(revertComponents(sign.lines), 0, lines, 0, lines.length);
+    }
+
+    public CraftSign(final Material material, final TileEntitySign te) {
+        super(material);
+        sign = te;
         lines = new String[sign.lines.length];
         System.arraycopy(revertComponents(sign.lines), 0, lines, 0, lines.length);
     }
@@ -76,5 +84,10 @@ public class CraftSign extends CraftBlockState implements Sign {
 
     private static String revertComponent(IChatBaseComponent component) {
         return CraftChatMessage.fromComponent(component);
+    }
+
+    @Override
+    public TileEntitySign getTileEntity() {
+        return sign;
     }
 }

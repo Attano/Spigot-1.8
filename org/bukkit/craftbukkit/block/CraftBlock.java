@@ -113,7 +113,12 @@ public class CraftBlock implements Block {
     }
 
     public void setType(final Material type) {
-        setTypeId(type.getId());
+        setType(type, true);
+    }
+
+    @Override
+    public void setType(Material type, boolean applyPhysics) {
+        setTypeId(type.getId(), applyPhysics);
     }
 
     public boolean setTypeId(final int type) {
@@ -121,7 +126,8 @@ public class CraftBlock implements Block {
     }
 
     public boolean setTypeId(final int type, final boolean applyPhysics) {
-        return setTypeIdAndData(type, getData(), applyPhysics);
+        net.minecraft.server.Block block = getNMSBlock(type);
+        return setTypeIdAndData(type, (byte) block.toLegacyData(block.getBlockData()), applyPhysics);
     }
 
     public boolean setTypeIdAndData(final int type, final byte data, final boolean applyPhysics) {
@@ -276,6 +282,7 @@ public class CraftBlock implements Block {
             return new CraftBeacon(this);
         case BANNER:
         case WALL_BANNER:
+        case STANDING_BANNER:
             return new CraftBanner(this);
         default:
             return new CraftBlockState(this);

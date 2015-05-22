@@ -72,7 +72,7 @@ public class CraftChunk implements Chunk {
     }
 
     public Block getBlock(int x, int y, int z) {
-        return new CraftBlock(this, (getX() << 4) | (x & 0xF), y & 0xFF, (getZ() << 4) | (z & 0xF));
+        return new CraftBlock(this, (getX() << 4) | (x & 0xF), y, (getZ() << 4) | (z & 0xF));
     }
 
     public Entity[] getEntities() {
@@ -111,8 +111,9 @@ public class CraftChunk implements Chunk {
             }
 
             BlockPosition position = (BlockPosition) obj;
-            entities[index++] = worldServer.getWorld().getBlockAt(position.getX() + (chunk.locX << 4), position.getY(), position.getZ() + (chunk.locZ << 4)).getState();
+            entities[index++] = worldServer.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()).getState();
         }
+
         return entities;
     }
 
@@ -168,7 +169,9 @@ public class CraftChunk implements Chunk {
 
                 // Copy base IDs
                 for (int j = 0; j < 4096; j++) {
-                    IBlockData blockData = net.minecraft.server.Block.getByCombinedId(baseids[j]);
+                    if (baseids[j] == 0) continue;
+                    IBlockData blockData = (IBlockData) net.minecraft.server.Block.d.a(baseids[j]);
+                    if (blockData == null) continue;
                     blockids[j] = (short) net.minecraft.server.Block.getId(blockData.getBlock());
                     int data = blockData.getBlock().toLegacyData(blockData);
                     int jj = j >> 1;
